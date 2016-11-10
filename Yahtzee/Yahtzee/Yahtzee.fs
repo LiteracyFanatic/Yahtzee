@@ -183,31 +183,6 @@ module Score =
         | Hold
         | Roll
 
-//    type Command =
-//        | MarkScore of Category
-//        | RollDice
-//        override x.ToString() = 
-//            match x with
-//            | MarkScore c -> c.ToString()
-//            | RollDice -> "RollDice"
-
-
-//    let startOfGameCommands = 
-//        Set.ofList 
-//            [ MarkScore(Aces)
-//              MarkScore(Twos)
-//              MarkScore(Threes)
-//              MarkScore(Fours)
-//              MarkScore(Fives)
-//              MarkScore(Sixes)
-//              MarkScore(ThreeOfAKind)
-//              MarkScore(FourOfAKind)
-//              MarkScore(FullHouse)
-//              MarkScore(SmallStraight)
-//              MarkScore(LargeStraight)
-//              MarkScore(Yahtzee)
-//              MarkScore(Chance) ]
-
     let rand = System.Random()
 
     let rollDice cs (Dice(ds)) =
@@ -295,7 +270,6 @@ module Game =
     type Player = {
         Name: string 
         Scorecard: Scorecard
-//        Commands: Set<Command>
     } with
         static member name =
             { Get = fun x -> x.Name
@@ -303,19 +277,10 @@ module Game =
         static member scorecard =
             { Get = fun x -> x.Scorecard
               Set = fun v x -> { x with Scorecard = v } }
-//        static member commands =
-//            { Get = fun x -> x.Commands
-//              Set = fun v x -> { x with Commands = v } }
         override x.ToString() =
-//            let commands =
-//                x.Commands
-//                |> Set.toList 
-//                |> List.map string
-//                |> String.concat "\n"
             sprintf "Name: %s\n\n\n%s\n"
                 (x.Name)
                 (x.Scorecard.ToString())
-//                (commands)
 
     let allCategories =
         Set.ofList [
@@ -337,8 +302,6 @@ module Game =
         ActivePlayer: Player
         OtherPlayers: Queue<Player>
         Dice: Dice
-//        DiceChoice: DiceChoice List
-//        Rolls: int 
     } with
         static member activePlayer =
             { Get = fun x -> x.ActivePlayer
@@ -346,12 +309,6 @@ module Game =
         static member otherPlayers =
             { Get = fun x -> x.OtherPlayers
               Set = fun v x -> {x with OtherPlayers = v} }
-//        static member diceChoice =
-//            { Get = fun x -> x.DiceChoice
-//              Set = fun v x -> {x with DiceChoice = v} }
-//        static member rolls =
-//            { Get = fun x -> x.Rolls
-//              Set = fun v x -> { x with Rolls = v } }
         static member dice =
             { Get = fun x -> x.Dice
               Set = fun v x -> { x with Dice = v } }
@@ -363,7 +320,6 @@ module Game =
                 |> String.concat "\n\n\n"
             sprintf "Dice = %s\n\n\nActive Player\n----------\n\n%s\n\nOther Players\n----------\n\n%s"
                 (x.Dice.ToString())
-//                (x.Rolls.ToString())
                 (x.ActivePlayer.ToString())
                 (others)
        
@@ -453,15 +409,6 @@ module Game =
         | SecondRoll 
         | FinalRoll -> Some(markScore)
 
-//    let mapIf p f1 v = if p v then f1 v else v
-
-//    let roll diceChoices =
-//        GameDetails.dice.Update (rollDice diceChoices) 
-//        >> (GameDetails.rolls += -1)
-//        >> mapIf 
-//            (GameDetails.rolls.Get >> (<) 1)
-//            (activePlayerCommands.Update (Set.remove RollDice))
-
     let roll diceChoices =
         (Game.details >>| GameDetails.dice).Update (rollDice diceChoices)  
         >> (Game.state.Update (function
@@ -484,59 +431,5 @@ module Game =
         |> (Game.details >>| GameDetails.otherPlayers).Update 
             (g |> (getActivePlayer >> Queue.conj) 
             >> Queue.tail )
-            
-//    let resetDice = GameDetails.rolls.Set 2
-
-//    let nextTurn =
-//        movePlayers
-//        >> resetDice
-//        >> activePlayerCommands.Update (Set.add RollDice)
-//
-//    let exec command gameDetails =
-//        match command with
-//        | MarkScore category ->
-//            gameDetails
-//            |> updateScore category 
-//            |> nextTurn
-//        | RollDice ->
-//            roll gameDetails 
-    
-
-
-//module TestApp =
-//
-//    open System.Windows
-//
-//    let f = new Form()
-//    let lb = new ListBox()
-//
-//    let connectToListBox =
-//        lb.Items.Clear()
-//        myGame.ActivePlayer.Commands 
-//        |> Set.toArray
-//        |> Array.map box
-//        |> lb.Items.AddRange
-//
-//    connectToListBox
-//
-//    lb.DoubleClick.Add (fun e ->
-//        myGame <- exec (unbox lb.SelectedItem) myGame
-//        connectToListBox
-//        printfn "%s" (myGame.ToString()))
-//
-//    f.Controls.Add lb
-//    f.Show()
-//
-//    roll myGame
-
-    //myGame <- exec  (MarkScore(Yahtzee)) myGame
-    //printfn "%s" (myGame.ToString())
-    //
-    //myGame
-    //|> exec RollDice
-    //|> exec RollDice
-    //|> exec (MarkScore(ThreeOfAKind))
-    //|> exec RollDice
-    //|> exec (MarkScore(Twos))
-    //|> printfn "%O"
+           
 
