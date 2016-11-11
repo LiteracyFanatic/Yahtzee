@@ -50,6 +50,22 @@ module Score =
                 | Yahtzee -> "Yahtzee"
                 | Chance -> "Chance"
     
+    let allCategories =
+        Set.ofList [
+            Aces
+            Twos
+            Threes
+            Fours
+            Fives
+            Sixes
+            ThreeOfAKind
+            FourOfAKind
+            FullHouse
+            SmallStraight
+            LargeStraight
+            Yahtzee
+            Chance ]
+
     let (|Upper|Lower|) c =
         match c with
         | Aces
@@ -139,6 +155,23 @@ module Score =
                 (printScoreOption x.LargeStraight)
                 (printScoreOption x.Yahtzee)
                 (printScoreOption x.Chance)
+
+    let blankCard = { 
+        Aces = None
+        Twos = None
+        Threes = None
+        Fours = None
+        Fives = None
+        Sixes = None
+        ThreeOfAKind = None
+        FourOfAKind = None
+        FullHouse = None
+        SmallStraight = None
+        LargeStraight = None
+        Yahtzee = None
+        Chance = None
+        AvailableCategories = allCategories
+    }
 
     let tallyScore sc =
         let upperScore = 
@@ -282,21 +315,7 @@ module Game =
                 (x.Name)
                 (x.Scorecard.ToString())
 
-    let allCategories =
-        Set.ofList [
-            Aces
-            Twos
-            Threes
-            Fours
-            Fives
-            Sixes
-            ThreeOfAKind
-            FourOfAKind
-            FullHouse
-            SmallStraight
-            LargeStraight
-            Yahtzee
-            Chance ]
+    let createPlayer name = { Name = name; Scorecard = blankCard }
 
     type GameDetails = { 
         ActivePlayer: Player
@@ -328,11 +347,9 @@ module Game =
         | SecondRoll
         | FinalRoll
 
-//    [<StructuralEquality>]
     type Game = {
         State: GameState
         Details: GameDetails
-        CapabilityProvider: CapabilityProvider
     } with
         static member state =
             { Get = fun x -> x.State
@@ -340,12 +357,33 @@ module Game =
         static member details =
             { Get = fun x -> x.Details
               Set = fun v x -> { x with Details = v } }
+    
+    type Result<'TSuccess, 'TError> =
+        | Success of 'TSuccess
+        | Error of 'TError
+    
+    type Error =
+        | NeedAtLestOnePlayer
+        
+    let createGame players =
+        match players with
+        | [] -> Error(NeedAtLestOnePlayer)
+        | p :: ps ->
+            let dice = List.fill 5 (Die(1)) [] |> Dice
+            
+            let gameDetails = {
+                ActivePlayer = p
+                OtherPlayers = Queue.ofList ps
+                Dice = dice
+            }
 
-    and RollCapability = DiceChoice list -> Game -> Game
+            Success({ State = InitialRoll; Details = gameDetails })
 
-    and MarkScoreCapability = Category -> Game -> Game
+    type RollCapability = DiceChoice list -> Game -> Game
 
-    and CapabilityProvider = {
+    type MarkScoreCapability = Category -> Game -> Game
+
+    type CapabilityProvider = {
         RollProvider: GameState -> RollCapability option
         MarkScoreProvider: GameState -> MarkScoreCapability option
     }
@@ -355,9 +393,9 @@ module Game =
         MarkScore: MarkScoreCapability option
     }
 
-    let getAvailableCapabilities capabilityProvider gameState =
-        { Roll = capabilityProvider.RollProvider gameState
-          MarkScore = capabilityProvider.MarkScoreProvider gameState }
+    let getAvailableCapabilities capabilityProvider game =
+        { Roll = capabilityProvider.RollProvider game.State
+          MarkScore = capabilityProvider.MarkScoreProvider game.State }
          
     let updatePlayerScore f l = 
         f >> Some >> (Player.scorecard >>| l).Set

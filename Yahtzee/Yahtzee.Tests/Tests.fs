@@ -14,42 +14,15 @@ let myDice =
 
 let myChoices = [Hold; Hold; Hold; Roll; Roll]
 
-let startCard = { 
-    Aces = None
-    Twos = None
-    Threes = None
-    Fours = None
-    Fives = None
-    Sixes = None
-    ThreeOfAKind = None
-    FourOfAKind = None
-    FullHouse = None
-    SmallStraight = None
-    LargeStraight = None
-    Yahtzee = None
-    Chance = None
-    AvailableCategories = allCategories
-}
 
-let myPlayer = { 
-    Name = "Jordan"
-    Scorecard = startCard
-}
-let player2 = {
-    Name = "p2"
-    Scorecard = startCard
-}
-let player3 = {
-    Name = "p3"
-    Scorecard = startCard
-}
-let player4 = {
-    Name = "p4"
-    Scorecard = startCard
-}
+let player1 = createPlayer "Player 1"
+let player2 = createPlayer "Player 2"
+let player3 = createPlayer "Player 3"
+let player4 = createPlayer "Player 4"
+
 
 let initialDetails = { 
-    ActivePlayer = myPlayer
+    ActivePlayer = player1
     OtherPlayers = Queue.ofList [player2; player3; player4]
     Dice = myDice
 }
@@ -62,17 +35,35 @@ let capabilityProvider = {
 let myGame = {
     State = InitialRoll
     Details = initialDetails
-    CapabilityProvider = capabilityProvider
 }
+
+let canCreateGameWith p r =
+    match createGame p with
+    | Success _ -> true
+    | Error _ -> false
+    |> should equal r
+
+[<Test>]
+let ``can create game with one player`` () = canCreateGameWith [player1] true
+
+[<Test>]
+let ``can create game with two players`` () = canCreateGameWith [player1; player2] true
+
+[<Test>]
+let ``can't create game zero players`` () = canCreateGameWith [] false
+
 
 [<Test>]
 let ``move players`` () =
     let newDetails = { 
         ActivePlayer = player2
-        OtherPlayers = Queue.ofList [player3; player4; myPlayer]
+        OtherPlayers = Queue.ofList [player3; player4; player1]
         Dice = myDice
     }
 
     let newGame = { myGame with Details = newDetails }
-    let moved = movePlayers myGame
-    moved.Details |> should equal newGame.Details
+
+    movePlayers myGame |> should equal newGame
+
+let cap = Game.getAvailableCapabilities capabilityProvider myGame
+cap.MarkScore
